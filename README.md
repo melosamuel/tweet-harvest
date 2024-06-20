@@ -8,9 +8,8 @@
 
 - Python 3.11
 - Python Libraries:
-  - Tweepy
+  - Selenium
   - Pandas
-- X dev account and API keys
 
 ## Installation
 
