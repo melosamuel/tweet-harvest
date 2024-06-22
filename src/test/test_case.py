@@ -126,16 +126,21 @@ def test_can_find_a_tweet(login, find_element):
 
     assert tweet != None
 
+def test_extract_username(login, find_element):
+    browser, wait = login
+
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    username_div = tweet.find_element(By.XPATH, "//div[contains(@data-testid, 'User-Name')]")
+    username = username_div.find_element(By.XPATH, "//span[starts-with(text(), '@')]")
+    
+    assert username.text[:1] == "@", f"username: {username.text}"
+
 @pytest.mark.skip(reason="Not implemented yet!")
-def test_exctract_username():
+def test_extract_tweet_text():
     pass
 
 @pytest.mark.skip(reason="Not implemented yet!")
-def test_exctract_tweet_text():
-    pass
-
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_exctrat_numbers():
+def test_extrat_numbers():
     pass
 
 @pytest.mark.skip(reason="Not implemented yet!")
@@ -143,5 +148,5 @@ def test_can_find_replies():
     pass
 
 @pytest.mark.skip(reason="Not implemented yet!")
-def test_exctract_tweet_url():
+def test_extract_tweet_url():
     pass
