@@ -37,6 +37,34 @@ def get_credentials():
     return username, password
 
 @pytest.fixture
+def login(start_browser, get_credentials, find_element):
+    username, password = get_credentials
+    browser, wait = start_browser
+
+    ac = ActionChains(browser)
+    url = "https://x.com/i/flow/login"
+
+    browser.get(url)
+    
+    user_input_field = find_element('//input[contains(@autocomplete, "username")]', '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div/div[4]/label/div/div[2]/div/input')
+    user_input_field.send_keys(username)
+
+    advance_btn = find_element('//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div/div/div/button[2]')
+    advance_btn.click()
+
+    ac.send_keys(username)
+    ac.key_down(Keys.ENTER)
+
+    password_input_field = find_element('//input[contains(@type, "password")]', '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div[1]/div/div/div[3]/div/label/div/div[2]/div[1]/input')
+    password_input_field.send_keys(password)
+
+    login_btn = find_element('//button[contains(@data-testid, "LoginForm_Login_Button")]', '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div[2]/div/div[1]/div/div/button')
+    login_btn.click()
+
+    return browser, wait
+
+
+@pytest.fixture
 def start_browser():
     options = Options()
     options.add_argument("--headless")
@@ -46,7 +74,7 @@ def start_browser():
 
     driver = webdriver.Chrome(options=options)
 
-    wait = WebDriverWait(driver, 2)
+    wait = WebDriverWait(driver, 5)
 
     return driver, wait
 
@@ -91,9 +119,12 @@ def test_login(start_browser, find_element, get_credentials):
 
     assert browser.current_url == target_url
 
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_can_find_a_tweet():
-    pass
+def test_can_find_a_tweet(login, find_element):
+    browser, wait = login
+
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+
+    assert tweet != None
 
 @pytest.mark.skip(reason="Not implemented yet!")
 def test_exctract_username():
