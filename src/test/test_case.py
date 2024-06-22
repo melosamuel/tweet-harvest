@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-import os, pytest, time
+import os, pytest, re, time
 
 @pytest.fixture
 def find_element(start_browser):
@@ -141,14 +141,47 @@ def test_extract_tweet_text(login, find_element):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
     text = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'tweetText')]")
 
-    browser.save_screenshot("./tweet_text.png")
-    with open("./tweet_text.txt", 'w', encoding='UTF-8') as file:
-        file.write(text.text)
-    
+    try:
+        browser.save_screenshot("./tweet_text.png")
+    except Exception as e:
+        assert 1==0, f"Failed to take a screenshot: {e}"
+
+    try: 
+        with open("./tweet_text.txt", 'w', encoding='UTF-8') as file:
+            file.write(text.text)
+    except Exception as e:
+        assert 1 == 0, f"Failed to write the text: {e}"
+        
     assert text.text != None, f"text: {text.text}"
 
+def test_get_replies_count(login, find_element):
+    browser, wait = login
+
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    replies_wrapper = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'reply')]")
+    replies_count = replies_wrapper.find_element(By.XPATH, ".//span[contains(@data-testid, 'app-text-transition-container')]")
+
+    pattern = r'\d+'
+    count = re.search(pattern, replies_count.text)
+    count = int(count.group())
+
+    assert isinstance(count, int), f"Failed to extract number of replies. Got {replies_count.text} instead"
+
+
 @pytest.mark.skip(reason="Not implemented yet!")
-def test_extrat_numbers():
+def test_get_retweets_count():
+    pass
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_get_quotes_count():
+    pass
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_get_likes_count():
+    pass
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_get_views_count():
     pass
 
 @pytest.mark.skip(reason="Not implemented yet!")
