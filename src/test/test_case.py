@@ -176,9 +176,19 @@ def test_get_retweets_count():
 def test_get_quotes_count():
     pass
 
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_get_likes_count():
-    pass
+def test_get_likes_count(login, find_element):
+    browser, wait = login
+
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    likes_wrapper = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'like')]")
+    likes_count = likes_wrapper.find_element(By.XPATH, ".//span[contains(@data-testid, 'app-text-transition-container')]")
+
+    pattern = r'\d+'
+    count = re.search(pattern, likes_count.text)
+    count = int(count.group())
+
+    assert isinstance(count, int), f"Failed to extract number of replies. Got {likes_count.text} instead"
+
 
 @pytest.mark.skip(reason="Not implemented yet!")
 def test_get_views_count():
