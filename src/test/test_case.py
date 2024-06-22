@@ -131,13 +131,21 @@ def test_extract_username(login, find_element):
 
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
     username_div = tweet.find_element(By.XPATH, "//div[contains(@data-testid, 'User-Name')]")
-    username = username_div.find_element(By.XPATH, "//span[starts-with(text(), '@')]")
+    username = username_div.find_element(By.XPATH, ".//span[starts-with(text(), '@')]")
     
     assert username.text[:1] == "@", f"username: {username.text}"
 
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_extract_tweet_text():
-    pass
+def test_extract_tweet_text(login, find_element):
+    browser, wait = login
+
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    text = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'tweetText')]")
+
+    browser.save_screenshot("./tweet_text.png")
+    with open("./tweet_text.txt", 'w', encoding='UTF-8') as file:
+        file.write(text.text)
+    
+    assert text.text != None, f"text: {text.text}"
 
 @pytest.mark.skip(reason="Not implemented yet!")
 def test_extrat_numbers():
