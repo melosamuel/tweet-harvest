@@ -167,15 +167,6 @@ def test_get_replies_count(login, find_element):
 
     assert isinstance(count, int), f"Failed to extract number of replies. Got {replies_count.text} instead"
 
-
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_get_retweets_count():
-    pass
-
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_get_quotes_count():
-    pass
-
 def test_get_likes_count(login, find_element):
     browser, wait = login
 
@@ -189,9 +180,24 @@ def test_get_likes_count(login, find_element):
 
     assert isinstance(count, int), f"Failed to extract number of replies. Got {likes_count.text} instead"
 
+def test_get_views_count(login, find_element):
+    browser, wait = login
+
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    views_count = tweet.find_element(By.XPATH, "(.//span[contains(@data-testid, 'app-text-transition-container')])[4]")
+
+    pattern = r'\d+'
+    count = re.search(pattern, views_count.text)
+    count = int(count.group())
+
+    assert isinstance(count, int), f"Failed to extract number of replies. Got {views_count.text} instead"
 
 @pytest.mark.skip(reason="Not implemented yet!")
-def test_get_views_count():
+def test_get_retweets_count():
+    pass
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_get_quotes_count():
     pass
 
 @pytest.mark.skip(reason="Not implemented yet!")
