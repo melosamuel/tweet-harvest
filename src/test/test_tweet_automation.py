@@ -1,4 +1,6 @@
+from datetime import datetime
 from dotenv import load_dotenv
+from pathlib import Path
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 from selenium.webdriver import ActionChains
@@ -10,8 +12,22 @@ from selenium.webdriver.support.ui import WebDriverWait
 import os, pytest, re, time
 
 @pytest.fixture
+def log():
+    def wrapper(message: str):
+        __DIR__ = Path(__file__).resolve().parent
+        log_folder = __DIR__ / 'log/'
+        log_folder.mkdir(parents=True, exist_ok=True)
+
+        log_file = log_folder / 'tweet_test_automation.log'
+
+        with open(log_file, 'a') as file:
+            file.write(f'{datetime.now()} - {message}\n')
+    
+    return wrapper
+
+@pytest.fixture
 def find_element(start_browser):
-    browser, wait = start_browser
+    _, wait = start_browser
 
     def wrapper(xpath: str, relative_xpath: str = ""):
         try:
@@ -39,7 +55,7 @@ def get_credentials():
 @pytest.fixture
 def login(start_browser, get_credentials, find_element):
     username, password = get_credentials
-    browser, wait = start_browser
+    browser, _ = start_browser
 
     ac = ActionChains(browser)
     url = "https://x.com/i/flow/login"
@@ -61,9 +77,6 @@ def login(start_browser, get_credentials, find_element):
     login_btn = find_element('//button[contains(@data-testid, "LoginForm_Login_Button")]', '//*[@id="layers"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div[2]/div/div[1]/div/div/button')
     login_btn.click()
 
-    return browser, wait
-
-
 @pytest.fixture
 def start_browser():
     options = Options()
@@ -79,12 +92,12 @@ def start_browser():
     return driver, wait
 
 def test_launch_browser(start_browser):
-    browser, wait = start_browser
+    browser, _ = start_browser
 
     assert browser != None
 
 def test_can_browse(start_browser):
-    browser, wait = start_browser
+    browser, _ = start_browser
     url = "https://www.google.com/"
 
     browser.get(url)
@@ -93,7 +106,7 @@ def test_can_browse(start_browser):
 
 def test_login(start_browser, find_element, get_credentials):
     username, password = get_credentials
-    browser, wait = start_browser
+    browser, _ = start_browser
     ac = ActionChains(browser)
     url = "https://x.com/i/flow/login"
     target_url = "https://x.com/home"
@@ -120,75 +133,85 @@ def test_login(start_browser, find_element, get_credentials):
     assert browser.current_url == target_url
 
 def test_can_find_a_tweet(login, find_element):
-    browser, wait = login
-
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
 
     assert tweet != None
 
-def test_extract_username(login, find_element):
-    browser, wait = login
-
+def test_get_username(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
     username_div = tweet.find_element(By.XPATH, "//div[contains(@data-testid, 'User-Name')]")
     username = username_div.find_element(By.XPATH, ".//span[starts-with(text(), '@')]")
-    
-    assert username.text[:1] == "@", f"username: {username.text}"
 
-def test_extract_tweet_text(login, find_element):
-    browser, wait = login
+    message = f'Username : {username.text}'
+    log(message)
+    
+    assert username.text[:1] == "@", f"failed to get username. got {username.text} instead"
+
+def test_extract_tweet_text(start_browser, login, find_element, log):
+    browser, _ = start_browser
+    __DIR__ = Path(__file__).resolve().parent
 
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
     text = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'tweetText')]")
 
+    if len(text.text) == 0:
+        text = ""
+
     try:
-        browser.save_screenshot("./tweet_text.png")
+        browser.save_screenshot(f"{__DIR__}/files/tweet_print.png")
     except Exception as e:
         assert 1==0, f"Failed to take a screenshot: {e}"
 
     try: 
-        with open("./tweet_text.txt", 'w', encoding='UTF-8') as file:
+        with open(f"{__DIR__}/files/tweet_text.txt", 'w', encoding='UTF-8') as file:
             file.write(text.text)
     except Exception as e:
-        assert 1 == 0, f"Failed to write the text: {e}"
+        assert 1 == 0, f"Failed to save the text: {e}"
         
     assert text.text != None, f"text: {text.text}"
 
-def test_get_replies_count(login, find_element):
-    browser, wait = login
-
+def test_get_replies_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
-    replies_wrapper = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'reply')]")
-    replies_count = replies_wrapper.find_element(By.XPATH, ".//span[contains(@data-testid, 'app-text-transition-container')]")
+    replies_count = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'reply')]")
+    count = 0
 
-    pattern = r'\d+'
-    count = re.search(pattern, replies_count.text)
-    count = int(count.group())
+    if len(replies_count.text) != 0:
+        pattern = r'\d+'
+        count = re.search(pattern, replies_count.text)
+        count = int(count.group())
 
+    message = f'Replies : {replies_count.text}'
+    log(message)
+    
     assert isinstance(count, int), f"Failed to extract number of replies. Got {replies_count.text} instead"
 
-def test_get_likes_count(login, find_element):
-    browser, wait = login
-
+def test_get_likes_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
-    likes_wrapper = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'like')]")
-    likes_count = likes_wrapper.find_element(By.XPATH, ".//span[contains(@data-testid, 'app-text-transition-container')]")
+    likes_count = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'like')]")
+    count = 0
 
-    pattern = r'\d+'
-    count = re.search(pattern, likes_count.text)
-    count = int(count.group())
+    if len(likes_count.text) != 0:
+        pattern = r'\d+'
+        count = re.search(pattern, likes_count.text)
+        count = int(count.group())
 
-    assert isinstance(count, int), f"Failed to extract number of replies. Got {likes_count.text} instead"
+    message = f'Likes : {likes_count.text}'
+    log(message)
 
-def test_get_views_count(login, find_element):
-    browser, wait = login
+    assert isinstance(count, int), f"Failed to extract number of replies. Got {likes_count.text} instead."
 
+def test_get_views_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
     views_count = tweet.find_element(By.XPATH, "(.//span[contains(@data-testid, 'app-text-transition-container')])[4]")
+    count = 0
 
-    pattern = r'\d+'
-    count = re.search(pattern, views_count.text)
-    count = int(count.group())
+    if len(views_count.text) != 0:
+        pattern = r'\d+'
+        count = re.search(pattern, views_count.text)
+        count = int(count.group())
+
+    message = f'Views : {views_count.text}'
+    log(message)
 
     assert isinstance(count, int), f"Failed to extract number of replies. Got {views_count.text} instead"
 
