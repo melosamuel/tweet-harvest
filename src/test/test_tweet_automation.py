@@ -258,17 +258,7 @@ def test_get_date(find_element, log, login):
 
     assert len(date) > 0, f"Failed to extract date. Got {date} instead"
 
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_can_find_replies(login, find_element):
-    pass
-
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_get_quotes_count():
-    pass
-
-
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_get_tweet_url():
+def test_get_url(find_element, log, login):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
 
     share_btn = tweet.find_element(By.XPATH,".//button[contains(@aria-label, 'Share post')]")
@@ -281,4 +271,16 @@ def test_get_tweet_url():
 
     link = pyperclip.paste()
 
+    if len(link) > 0:
+        message = f"Link: {link}"
+        log(message)
+
     assert link.startswith("https://"), f"Failed to get link. Got {link} instead"
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_can_find_replies(login, find_element):
+    pass
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_get_quotes_count():
+    pass
