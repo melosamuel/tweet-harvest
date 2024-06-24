@@ -4,26 +4,12 @@ from pathlib import Path
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 from selenium.webdriver import ActionChains
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.edge.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 import os, pytest, re, time
-
-@pytest.fixture
-def log():
-    def wrapper(message: str):
-        __DIR__ = Path(__file__).resolve().parent
-        log_folder = __DIR__ / 'log/'
-        log_folder.mkdir(parents=True, exist_ok=True)
-
-        log_file = log_folder / 'tweet_test_automation.log'
-
-        with open(log_file, 'a') as file:
-            file.write(f'{datetime.now()} - {message}\n')
-    
-    return wrapper
 
 @pytest.fixture
 def find_element(start_browser):
@@ -51,6 +37,20 @@ def get_credentials():
     password = os.getenv("PASSWORD")
 
     return username, password
+
+@pytest.fixture
+def log():
+    def wrapper(message: str):
+        __DIR__ = Path(__file__).resolve().parent
+        log_folder = __DIR__ / 'log/'
+        log_folder.mkdir(parents=True, exist_ok=True)
+
+        log_file = log_folder / 'tweet_test_automation.log'
+
+        with open(log_file, 'a') as file:
+            file.write(f'{datetime.now()} - {message}\n')
+    
+    return wrapper
 
 @pytest.fixture
 def login(start_browser, get_credentials, find_element):
@@ -85,7 +85,7 @@ def start_browser():
     options.add_argument("--window-size=800,600")
     options.add_argument("--log-level=3")
 
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Edge(options=options)
 
     wait = WebDriverWait(driver, 5)
 
@@ -147,7 +147,7 @@ def test_get_username(login, find_element, log):
     
     assert username.text[:1] == "@", f"failed to get username. got {username.text} instead"
 
-def test_extract_tweet_text(start_browser, login, find_element, log):
+def test_get_tweet_text(start_browser, login, find_element, log):
     browser, _ = start_browser
     __DIR__ = Path(__file__).resolve().parent
 
@@ -215,9 +215,20 @@ def test_get_views_count(login, find_element, log):
 
     assert isinstance(count, int), f"Failed to extract number of replies. Got {views_count.text} instead"
 
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_get_retweets_count():
-    pass
+def test_get_retweets_count(login, find_element, log):
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    retweets_count = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'retweet')]")
+    count = 0
+
+    if len(retweets_count.text) != 0:
+        pattern = r'\d+'
+        count = re.search(pattern, retweets_count.text)
+        count = int(count.group())
+
+    message = f'Retweets : {retweets_count.text}'
+    log(message)
+
+    assert isinstance(count, int), f"Failed to extract number of replies. Got {retweets_count} instead"
 
 @pytest.mark.skip(reason="Not implemented yet!")
 def test_get_quotes_count():
@@ -228,5 +239,5 @@ def test_can_find_replies():
     pass
 
 @pytest.mark.skip(reason="Not implemented yet!")
-def test_extract_tweet_url():
+def test_get_tweet_url():
     pass
