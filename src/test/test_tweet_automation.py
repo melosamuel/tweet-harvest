@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-import os, pyperclip, pytest, re, time
+import os, pytest, re, time
 
 @pytest.fixture
 def find_element(start_browser):
@@ -297,6 +297,3 @@ def test_can_find_replies(find_element, log, login):
     log(message)
 
     assert link != reply_link, f"Failed to get the tweet and reply links. Got {link} and {reply_link} instead."
-
-def test_get_quotes_count():
-    pass
