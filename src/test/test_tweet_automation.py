@@ -2,7 +2,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from pathlib import Path
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, ElementNotInteractableException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -22,7 +22,10 @@ def find_element(start_browser):
             print(f"TimeoutException for {xpath}! Using relative xpath.")
             element = wait.until(EC.presence_of_element_located((By.XPATH, relative_xpath)))
         except ElementClickInterceptedException:
-            print("ElementClickInterceptedException! Waiting for element to be clickable.")
+            print("ElementClickInterceptedException! Waiting element to be clickable.")
+            element = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+        except ElementNotInteractableException:
+            print("ElementNotInteractableException! Waiting element to be clickable.")
             element = wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
         finally:
             return element
@@ -260,6 +263,21 @@ def test_get_date(find_element, log, login):
 
 def test_get_url(find_element, log, login):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    username_div = tweet.find_element(By.XPATH, "//div[contains(@data-testid, 'User-Name')]")
+    username = username_div.find_element(By.XPATH, ".//span[starts-with(text(), '@')]")
+
+    partial_link = tweet.find_element(By.XPATH, f".//a[starts-with(@href, '/{username.text[1:]}/status/')]")
+    link = partial_link.get_attribute("href")
+
+    if len(link) > 0:
+        message = f"Link: {link}"
+        log(message)
+
+    assert link.startswith("https://x.com/"), f"Failed to get link. Got {link} instead"
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_can_find_replies(find_element, log, login):
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
 
     share_btn = tweet.find_element(By.XPATH,".//button[contains(@aria-label, 'Share post')]")
     share_btn.click()
@@ -271,16 +289,23 @@ def test_get_url(find_element, log, login):
 
     link = pyperclip.paste()
 
-    if len(link) > 0:
-        message = f"Link: {link}"
-        log(message)
+    tweet.click()
 
-    assert link.startswith("https://"), f"Failed to get link. Got {link} instead"
+    time.sleep(60)
 
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_can_find_replies(login, find_element):
-    pass
+    reply = find_element("(//article[contains(@data-testid, 'tweet')])[2]")
 
-@pytest.mark.skip(reason="Not implemented yet!")
+    reply_share_btn = reply.find_element(By.XPATH,".//button[contains(@aria-label, 'Share post')]")
+    reply_share_btn.click()
+
+    reply_link_btn = find_element("//div[contains(@data-testid, 'Dropdown')]/div[1]")
+    reply_link_btn.click()
+
+    time.sleep(1)
+
+    reply_link = pyperclip.paste()
+
+    assert link != reply_link, f"Failed to get the tweet and reply links. Got {link} and {reply_link} instead."
+
 def test_get_quotes_count():
     pass
