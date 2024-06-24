@@ -185,6 +185,21 @@ def test_get_replies_count(login, find_element, log):
     
     assert isinstance(count, int), f"Failed to extract number of replies. Got {replies_count.text} instead"
 
+def test_get_retweets_count(login, find_element, log):
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    retweets_count = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'retweet')]")
+    count = 0
+
+    if len(retweets_count.text) != 0:
+        pattern = r'\d+'
+        count = re.search(pattern, retweets_count.text)
+        count = int(count.group())
+
+    message = f'Retweets : {retweets_count.text}'
+    log(message)
+
+    assert isinstance(count, int), f"Failed to extract number of replies. Got {retweets_count} instead"
+
 def test_get_likes_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
     likes_count = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'like')]")
@@ -215,28 +230,34 @@ def test_get_views_count(login, find_element, log):
 
     assert isinstance(count, int), f"Failed to extract number of replies. Got {views_count.text} instead"
 
-def test_get_retweets_count(login, find_element, log):
+def test_get_bookmarks_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
-    retweets_count = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'retweet')]")
+    tweet.click()
+    bookmarks_count = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'bookmark')]")
     count = 0
 
-    if len(retweets_count.text) != 0:
+    if len(bookmarks_count.text) != 0:
         pattern = r'\d+'
-        count = re.search(pattern, retweets_count.text)
+        count = re.search(pattern, bookmarks_count.text)
         count = int(count.group())
 
-    message = f'Retweets : {retweets_count.text}'
+    message = f'Bookmarks : {bookmarks_count.text}'
     log(message)
 
-    assert isinstance(count, int), f"Failed to extract number of replies. Got {retweets_count} instead"
+    assert isinstance(count, int), f"Failed to extract number of replies. Got {bookmarks_count.text} instead"
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_get_date():
+    pass
+
+@pytest.mark.skip(reason="Not implemented yet!")
+def test_can_find_replies(login, find_element):
+    pass
 
 @pytest.mark.skip(reason="Not implemented yet!")
 def test_get_quotes_count():
     pass
 
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_can_find_replies():
-    pass
 
 @pytest.mark.skip(reason="Not implemented yet!")
 def test_get_tweet_url():
