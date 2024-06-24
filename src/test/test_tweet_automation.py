@@ -4,12 +4,12 @@ from pathlib import Path
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 from selenium.webdriver import ActionChains
-from selenium.webdriver.edge.options import Options
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-import os, pytest, re, time
+import os, pyperclip, pytest, re, time
 
 @pytest.fixture
 def find_element(start_browser):
@@ -80,12 +80,12 @@ def login(start_browser, get_credentials, find_element):
 @pytest.fixture
 def start_browser():
     options = Options()
-    options.add_argument("--headless")
+    '''options.add_argument("--headless")
     options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=800,600")
+    options.add_argument("--window-size=800,600")'''
     options.add_argument("--log-level=3")
 
-    driver = webdriver.Edge(options=options)
+    driver = webdriver.Chrome(options=options)
 
     wait = WebDriverWait(driver, 5)
 
@@ -94,7 +94,7 @@ def start_browser():
 def test_launch_browser(start_browser):
     browser, _ = start_browser
 
-    assert browser != None
+    assert browser != None, f"Couldn't start the browser."
 
 def test_can_browse(start_browser):
     browser, _ = start_browser
@@ -102,7 +102,7 @@ def test_can_browse(start_browser):
 
     browser.get(url)
 
-    assert browser.current_url == url
+    assert browser.current_url == url, f"Browser can't go to {url}"
 
 def test_login(start_browser, find_element, get_credentials):
     username, password = get_credentials
@@ -130,12 +130,12 @@ def test_login(start_browser, find_element, get_credentials):
 
     time.sleep(5)
 
-    assert browser.current_url == target_url
+    assert browser.current_url == target_url, "Unable to login. Check withou --headless otpion."
 
 def test_can_find_a_tweet(login, find_element):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
 
-    assert tweet != None
+    assert tweet != None, f"Can't find a tweet"
 
 def test_get_username(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
@@ -168,7 +168,7 @@ def test_get_tweet_text(start_browser, login, find_element, log):
     except Exception as e:
         assert 1 == 0, f"Failed to save the text: {e}"
         
-    assert text.text != None, f"text: {text.text}"
+    assert text.text != None, f"Failed to get text. Got {text.text} instead."
 
 def test_get_replies_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
@@ -198,7 +198,7 @@ def test_get_retweets_count(login, find_element, log):
     message = f'Retweets : {retweets_count.text}'
     log(message)
 
-    assert isinstance(count, int), f"Failed to extract number of replies. Got {retweets_count} instead"
+    assert isinstance(count, int), f"Failed to extract number of retweets. Got {retweets_count} instead"
 
 def test_get_likes_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
@@ -213,7 +213,7 @@ def test_get_likes_count(login, find_element, log):
     message = f'Likes : {likes_count.text}'
     log(message)
 
-    assert isinstance(count, int), f"Failed to extract number of replies. Got {likes_count.text} instead."
+    assert isinstance(count, int), f"Failed to extract number of likes. Got {likes_count.text} instead."
 
 def test_get_views_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
@@ -228,7 +228,7 @@ def test_get_views_count(login, find_element, log):
     message = f'Views : {views_count.text}'
     log(message)
 
-    assert isinstance(count, int), f"Failed to extract number of replies. Got {views_count.text} instead"
+    assert isinstance(count, int), f"Failed to extract number of views. Got {views_count.text} instead"
 
 def test_get_bookmarks_count(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
@@ -244,11 +244,19 @@ def test_get_bookmarks_count(login, find_element, log):
     message = f'Bookmarks : {bookmarks_count.text}'
     log(message)
 
-    assert isinstance(count, int), f"Failed to extract number of replies. Got {bookmarks_count.text} instead"
+    assert isinstance(count, int), f"Failed to extract number of bookmarks. Got {bookmarks_count.text} instead"
 
-@pytest.mark.skip(reason="Not implemented yet!")
-def test_get_date():
-    pass
+def test_get_date(find_element, log, login):
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    tweet.click()
+
+    date_wrapper = tweet.find_element(By.XPATH, f".//a[contains(@role, 'link')]/time")
+    date = str(date_wrapper.get_attribute("datetime"))
+    
+    message = f'Date : {date}'
+    log(message)
+
+    assert len(date) > 0, f"Failed to extract date. Got {date} instead"
 
 @pytest.mark.skip(reason="Not implemented yet!")
 def test_can_find_replies(login, find_element):
@@ -261,4 +269,16 @@ def test_get_quotes_count():
 
 @pytest.mark.skip(reason="Not implemented yet!")
 def test_get_tweet_url():
-    pass
+    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+
+    share_btn = tweet.find_element(By.XPATH,".//button[contains(@aria-label, 'Share post')]")
+    share_btn.click()
+
+    link_btn = find_element("//div[contains(@data-testid, 'Dropdown')]/div[1]")
+    link_btn.click()
+
+    time.sleep(1)
+
+    link = pyperclip.paste()
+
+    assert link.startswith("https://"), f"Failed to get link. Got {link} instead"
