@@ -142,7 +142,7 @@ def test_can_find_a_tweet(login, find_element):
 
 def test_get_username(login, find_element, log):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
-    username_div = tweet.find_element(By.XPATH, "//div[contains(@data-testid, 'User-Name')]")
+    username_div = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'User-Name')]")
     username = username_div.find_element(By.XPATH, ".//span[starts-with(text(), '@')]")
 
     message = f'Username : {username.text}'
@@ -275,35 +275,26 @@ def test_get_url(find_element, log, login):
 
     assert link.startswith("https://x.com/"), f"Failed to get link. Got {link} instead"
 
-@pytest.mark.skip(reason="Not implemented yet!")
 def test_can_find_replies(find_element, log, login):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
+    username_div = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'User-Name')]")
+    username = username_div.find_element(By.XPATH, ".//span[starts-with(text(), '@')]")
 
-    share_btn = tweet.find_element(By.XPATH,".//button[contains(@aria-label, 'Share post')]")
-    share_btn.click()
-
-    link_btn = find_element("//div[contains(@data-testid, 'Dropdown')]/div[1]")
-    link_btn.click()
-
-    time.sleep(1)
-
-    link = pyperclip.paste()
+    partial_link = tweet.find_element(By.XPATH, f".//a[starts-with(@href, '/{username.text[1:]}/status/')]")
+    link = partial_link.get_attribute("href")
 
     tweet.click()
 
-    time.sleep(60)
+    reply_tweet = find_element("(//article[contains(@data-testid, 'tweet')])[2]")
 
-    reply = find_element("(//article[contains(@data-testid, 'tweet')])[2]")
+    reply_username_div = reply_tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'User-Name')]")
+    reply_username = reply_username_div.find_element(By.XPATH, ".//span[starts-with(text(), '@')]")
 
-    reply_share_btn = reply.find_element(By.XPATH,".//button[contains(@aria-label, 'Share post')]")
-    reply_share_btn.click()
+    reply_partial_link = reply_tweet.find_element(By.XPATH, f".//a[starts-with(@href, '/{reply_username.text[1:]}')]")
+    reply_link = reply_partial_link.get_attribute("href")
 
-    reply_link_btn = find_element("//div[contains(@data-testid, 'Dropdown')]/div[1]")
-    reply_link_btn.click()
-
-    time.sleep(1)
-
-    reply_link = pyperclip.paste()
+    message = f"Links: {link} | {reply_link}"
+    log(message)
 
     assert link != reply_link, f"Failed to get the tweet and reply links. Got {link} and {reply_link} instead."
 
