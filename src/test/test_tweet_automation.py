@@ -83,9 +83,9 @@ def login(start_browser, get_credentials, find_element):
 @pytest.fixture
 def start_browser():
     options = Options()
-    '''options.add_argument("--headless")
+    options.add_argument("--headless")
     options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=800,600")'''
+    options.add_argument("--window-size=800,600")
     options.add_argument("--log-level=3")
 
     driver = webdriver.Chrome(options=options)
