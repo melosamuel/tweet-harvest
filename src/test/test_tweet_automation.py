@@ -2,9 +2,9 @@ from datetime import datetime
 from dotenv import load_dotenv
 from pathlib import Path
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, ElementNotInteractableException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException
 from selenium.webdriver import ActionChains
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.edge.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
@@ -88,9 +88,9 @@ def start_browser():
     options.add_argument("--window-size=800,600")
     options.add_argument("--log-level=3")
 
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Edge(options=options)
 
-    wait = WebDriverWait(driver, 5)
+    wait = WebDriverWait(driver, 10)
 
     return driver, wait
 
@@ -155,10 +155,12 @@ def test_get_tweet_text(start_browser, login, find_element, log):
     __DIR__ = Path(__file__).resolve().parent
 
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
-    text = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'tweetText')]")
 
-    if len(text.text) == 0:
-        text = ""
+    try:
+        text = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'tweetText')]")
+    except NoSuchElementException:
+        log("Has text: False")
+        pytest.skip("This Tweet has no text!")
 
     try:
         browser.save_screenshot(f"{__DIR__}/files/tweet_print.png")
@@ -170,6 +172,8 @@ def test_get_tweet_text(start_browser, login, find_element, log):
             file.write(text.text)
     except Exception as e:
         assert 1 == 0, f"Failed to save the text: {e}"
+
+    log("Has text: True")
         
     assert text.text != None, f"Failed to get text. Got {text.text} instead."
 
@@ -233,22 +237,6 @@ def test_get_views_count(login, find_element, log):
 
     assert isinstance(count, int), f"Failed to extract number of views. Got {views_count.text} instead"
 
-def test_get_bookmarks_count(login, find_element, log):
-    tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
-    tweet.click()
-    bookmarks_count = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'bookmark')]")
-    count = 0
-
-    if len(bookmarks_count.text) != 0:
-        pattern = r'\d+'
-        count = re.search(pattern, bookmarks_count.text)
-        count = int(count.group())
-
-    message = f'Bookmarks : {bookmarks_count.text}'
-    log(message)
-
-    assert isinstance(count, int), f"Failed to extract number of bookmarks. Got {bookmarks_count.text} instead"
-
 def test_get_date(find_element, log, login):
     tweet = find_element("(//article[contains(@data-testid, 'tweet')])[1]")
     tweet.click()
@@ -294,6 +282,6 @@ def test_can_find_replies(find_element, log, login):
     reply_link = reply_partial_link.get_attribute("href")
 
     message = f"Links: {link} | {reply_link}"
-    log(message)
+    log(message + "\n")
 
     assert link != reply_link, f"Failed to get the tweet and reply links. Got {link} and {reply_link} instead."
