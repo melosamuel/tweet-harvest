@@ -43,7 +43,7 @@ pip install -r requirements.txt
 
 ### What's the "QUERY" variable?
 
-You can search for people, tweets or retweets it's the link. A tweet's link looks like this: ```https://x.com/[the username]/status/[the tweet's "id"]```
+You can search for people, tweets or retweets by it's link. A tweet's link looks like this: ```https://x.com/[the username]/status/[the tweet's "id"]```
 
 If you want to search for tweets using specific filters, you can use the "search" button, add your filters on "Advanced Search", copy the generated link and paste it in the "QUERY" variable.
 
