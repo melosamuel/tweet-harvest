@@ -15,41 +15,80 @@ import pandas as pd
 def get_analytics(logger, wait: WebDriverWait, index: int):
     tweet = find_web_element(logger, wait, f"(//article[contains(@data-testid, 'tweet')])[{index}]")
 
-    username_wrapper = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'User-Name')]")
-    username = username_wrapper.find_element(By.XPATH, ".//span[starts-with(text(), '@')]")
+    username = get_username(tweet)
 
-    date_wrapper = tweet.find_element(By.XPATH, f".//a[contains(@role, 'link')]/time")
-    date = str(date_wrapper.get_attribute("datetime"))
+    date = get_date(tweet)
 
-    try:
-        text = tweet.find_element(By.XPATH, ".//div[contains(@data-testid, 'tweetText')]")
-    except NoSuchElementException:
-        text = ""
+    text = get_text(tweet)
 
-    replies = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'reply')]")
+    replies = get_replies(tweet)
 
-    retweets = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'retweet')]")
+    retweets = get_retweets(tweet)
 
+    likes = get_likes(tweet)
 
-    likes = tweet.find_element(By.XPATH, ".//button[contains(@data-testid, 'like')]")
+    views = get_views(tweet)
 
-    views = tweet.find_element(By.XPATH, "(.//span[contains(@data-testid, 'app-text-transition-container')])[4]")
-
-    partial_link = tweet.find_element(By.XPATH, f".//a[starts-with(@href, '/{username.text[1:]}/status/')]")
-    link = partial_link.get_attribute("href")
+    link = get_url(tweet, username)
 
     data = [{
-        'username': username.text,
+        'username': username,
         'date': date,
-        'text': text.text if isinstance(text, WebElement) else "",
-        'replies': replies.text,
-        'retweets': retweets.text,
-        'likes': likes.text,
-        'views': views.text,
+        'text': text,
+        'replies': replies,
+        'retweets': retweets,
+        'likes': likes,
+        'views': views,
         'url': link
     }]
 
     return data
+
+def get_date(parent: WebElement) -> str:
+    date_wrapper = parent.find_element(By.XPATH, f".//a[contains(@role, 'link')]/time")
+    date = str(date_wrapper.get_attribute("datetime"))
+
+    return date
+
+def get_likes(parent: WebElement) -> str:
+    likes = parent.find_element(By.XPATH, ".//button[contains(@data-testid, 'like')]").text
+
+    return likes
+
+def get_replies(parent: WebElement) -> str:
+    replies = parent.find_element(By.XPATH, ".//button[contains(@data-testid, 'reply')]").text
+
+    return replies
+
+def get_retweets(parent: WebElement) -> str:
+    retweets = parent.find_element(By.XPATH, ".//button[contains(@data-testid, 'retweet')]").text
+
+    return retweets
+
+def get_text(parent: WebElement) -> str:
+    try:
+        text = parent.find_element(By.XPATH, ".//div[contains(@data-testid, 'tweetText')]").text
+    except NoSuchElementException:
+        text = ""
+
+    return text
+
+def get_url(parent: WebElement, username: str) -> str:
+    partial_link = parent.find_element(By.XPATH, f".//a[starts-with(@href, '/{username[1:]}/status/')]")
+    link = partial_link.get_attribute("href")
+
+    return link
+
+def get_username(parent: WebElement) -> str:
+    username_wrapper = parent.find_element(By.XPATH, ".//div[contains(@data-testid, 'User-Name')]")
+    username = username_wrapper.find_element(By.XPATH, ".//span[starts-with(text(), '@')]").text
+
+    return username
+
+def get_views(parent: WebElement) -> str:
+    views = parent.find_element(By.XPATH, "(.//span[contains(@data-testid, 'app-text-transition-container')])[4]").text
+
+    return views
 
 def log():
     log_folder = __DIR__ / 'log/'
